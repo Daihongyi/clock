@@ -19,13 +19,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -72,6 +69,28 @@ val colorSchemes = listOf(
     "Orange" to OrangeColorScheme
 )
 
+// 计时器状态类，用于保持状态
+class TimerState {
+    var initialHours by mutableIntStateOf(0)
+    var initialMinutes by mutableIntStateOf(0)
+    var initialSeconds by mutableIntStateOf(0)
+    var timerValue by mutableIntStateOf(0)
+    var isRunning by mutableStateOf(false)
+    var showDialog by mutableStateOf(false)
+    var lastUpdateTime by mutableLongStateOf(0L)
+    var coroutineScope: CoroutineScope? = null
+}
+
+// 秒表状态类，用于保持状态
+class StopwatchState {
+    var elapsedTime by mutableLongStateOf(0L)
+    var isRunning by mutableStateOf(false)
+    var startNano by mutableLongStateOf(0L)
+    var accumulatedNano by mutableLongStateOf(0L)
+    var laps by mutableStateOf(listOf<Pair<Int, Long>>())
+    var coroutineScope: CoroutineScope? = null
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,13 +99,56 @@ class MainActivity : ComponentActivity() {
             var currentThemeIndex by remember { mutableIntStateOf(0) }
             val currentColorScheme = colorSchemes[currentThemeIndex].second
 
+            // 创建计时器和秒表的状态对象
+            val timerState = remember { TimerState() }
+            val stopwatchState = remember { StopwatchState() }
+
+            // 确保计时器在后台运行
+            LaunchedEffect(timerState.isRunning) {
+                if (timerState.isRunning && timerState.coroutineScope == null) {
+                    timerState.coroutineScope = CoroutineScope(Dispatchers.Main)
+                    timerState.coroutineScope?.launch {
+                        while (timerState.isRunning && timerState.timerValue > 0) {
+                            delay(1000)
+                            timerState.timerValue--
+                            timerState.lastUpdateTime = System.currentTimeMillis()
+                        }
+                        if (timerState.timerValue <= 0) {
+                            timerState.isRunning = false
+                        }
+                    }
+                } else if (!timerState.isRunning) {
+                    timerState.coroutineScope?.cancel()
+                    timerState.coroutineScope = null
+                }
+            }
+
+            // 确保秒表在后台运行
+            LaunchedEffect(stopwatchState.isRunning) {
+                if (stopwatchState.isRunning && stopwatchState.coroutineScope == null) {
+                    stopwatchState.coroutineScope = CoroutineScope(Dispatchers.Main)
+                    stopwatchState.coroutineScope?.launch {
+                        while (stopwatchState.isRunning) {
+                            delay(50) // 每50ms更新一次以获得更流畅的显示
+                            stopwatchState.elapsedTime = stopwatchState.accumulatedNano +
+                                    (System.nanoTime() - stopwatchState.startNano)
+                        }
+                    }
+                } else if (!stopwatchState.isRunning) {
+                    stopwatchState.coroutineScope?.cancel()
+                    stopwatchState.coroutineScope = null
+                }
+            }
+
             MaterialTheme(
                 colorScheme = currentColorScheme,
                 typography = MaterialTheme.typography
             ) {
                 TimeApp(
                     currentThemeIndex = currentThemeIndex,
-                    onThemeChange = { newIndex -> currentThemeIndex = newIndex }
+                    onThemeChange = { newIndex -> currentThemeIndex = newIndex },
+                    timerState = timerState,
+                    stopwatchState = stopwatchState
                 )
             }
         }
@@ -97,7 +159,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun TimeApp(
     currentThemeIndex: Int,
-    onThemeChange: (Int) -> Unit
+    onThemeChange: (Int) -> Unit,
+    timerState: TimerState,
+    stopwatchState: StopwatchState
 ) {
     var currentTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("时钟", "计时器", "秒表")
@@ -177,8 +241,8 @@ fun TimeApp(
             ) { tab ->
                 when (tab) {
                     0 -> ClockScreen()
-                    1 -> TimerScreen()
-                    2 -> StopwatchScreen()
+                    1 -> TimerScreen(timerState = timerState)
+                    2 -> StopwatchScreen(stopwatchState = stopwatchState)
                     else -> ClockScreen()
                 }
             }
@@ -312,34 +376,15 @@ fun CircularElementContainer(content: @Composable BoxScope.() -> Unit) {
 }
 
 @Composable
-fun TimerScreen() {
-    // 状态管理
-    var showDialog by remember { mutableStateOf(false) }
-    var initialHours by remember { mutableIntStateOf(0) }
-    var initialMinutes by remember { mutableIntStateOf(0) } // 默认1分钟
-    var initialSeconds by remember { mutableIntStateOf(0) }
+fun TimerScreen(timerState: TimerState) {
     val currentColorScheme = MaterialTheme.colorScheme
 
     // 计算初始时间（秒）
-    val initialTime = remember(initialHours, initialMinutes, initialSeconds) {
-        initialHours * 3600 + initialMinutes * 60 + initialSeconds
+    val initialTime = remember(timerState.initialHours, timerState.initialMinutes, timerState.initialSeconds) {
+        timerState.initialHours * 3600 + timerState.initialMinutes * 60 + timerState.initialSeconds
     }
 
-    var timerValue by remember { mutableIntStateOf(initialTime) }
-    var isRunning by remember { mutableStateOf(false) }
-    var progress by remember { mutableFloatStateOf(if (initialTime > 0) timerValue.toFloat() / initialTime else 1f) }
-
-    // 计时器逻辑
-    LaunchedEffect(isRunning) {
-        if (isRunning) {
-            while (timerValue > 0 && isRunning) {
-                delay(1000)
-                timerValue--
-                progress = timerValue.toFloat() / initialTime
-            }
-            if (timerValue == 0) isRunning = false
-        }
-    }
+    val progress = if (initialTime > 0) timerState.timerValue.toFloat() / initialTime else 1f
 
     Column(
         modifier = Modifier
@@ -354,7 +399,7 @@ fun TimerScreen() {
             horizontalArrangement = Arrangement.End
         ) {
             IconButton(
-                onClick = { showDialog = true },
+                onClick = { timerState.showDialog = true },
                 modifier = Modifier.size(48.dp)
             ) {
                 Icon(
@@ -381,9 +426,9 @@ fun TimerScreen() {
                 text = String.format(
                     Locale.US,
                     "%02d:%02d:%02d",
-                    timerValue / 3600,
-                    (timerValue % 3600) / 60,
-                    timerValue % 60
+                    timerState.timerValue / 3600,
+                    (timerState.timerValue % 3600) / 60,
+                    timerState.timerValue % 60
                 ),
                 style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.Bold,
@@ -399,37 +444,40 @@ fun TimerScreen() {
         ) {
             FilledTonalButton(
                 onClick = {
-                    timerValue = initialTime
-                    progress = 1f
-                    isRunning = false
+                    timerState.timerValue = initialTime
+                    timerState.isRunning = false
                 },
                 shape = CircleShape,
-                enabled = timerValue != initialTime || isRunning
+                enabled = timerState.timerValue != initialTime || timerState.isRunning
             ) {
                 Icon(Icons.Default.Replay, "重置")
             }
 
             Button(
-                onClick = { isRunning = !isRunning },
+                onClick = {
+                    timerState.isRunning = !timerState.isRunning
+                    // 当重新开始时，重置最后更新时间
+                    if (timerState.isRunning) timerState.lastUpdateTime = System.currentTimeMillis()
+                },
                 shape = CircleShape,
-                enabled = timerValue > 0,
+                enabled = timerState.timerValue > 0,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = currentColorScheme.primary,
                     contentColor = currentColorScheme.onPrimary
                 )
             ) {
                 Icon(
-                    if (isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    if (isRunning) "暂停" else "开始"
+                    if (timerState.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    if (timerState.isRunning) "暂停" else "开始"
                 )
             }
         }
     }
 
     // 时间设置对话框
-    if (showDialog) {
+    if (timerState.showDialog) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
+            onDismissRequest = { timerState.showDialog = false },
             title = { Text("设置计时器") },
             text = {
                 Column {
@@ -439,17 +487,17 @@ fun TimerScreen() {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // 小时输入 - 修复处理逻辑
+                        // 小时输入
                         OutlinedTextField(
-                            value = initialHours.takeIf { it > 0 }?.toString() ?: "",
+                            value = timerState.initialHours.takeIf { it > 0 }?.toString() ?: "",
                             onValueChange = { input ->
                                 if (input.isEmpty()) {
-                                    initialHours = 0
+                                    timerState.initialHours = 0
                                 } else {
                                     input.filter { it.isDigit() }.toIntOrNull()?.takeIf { num ->
                                         num in 0..99
                                     }?.let {
-                                        initialHours = it
+                                        timerState.initialHours = it
                                     }
                                 }
                             },
@@ -458,17 +506,17 @@ fun TimerScreen() {
                             modifier = Modifier.weight(1f)
                         )
 
-                        // 分钟输入 - 修复处理逻辑
+                        // 分钟输入
                         OutlinedTextField(
-                            value = initialMinutes.takeIf { it > 0 }?.toString() ?: "",
+                            value = timerState.initialMinutes.takeIf { it > 0 }?.toString() ?: "",
                             onValueChange = { input ->
                                 if (input.isEmpty()) {
-                                    initialMinutes = 0
+                                    timerState.initialMinutes = 0
                                 } else {
                                     input.filter { it.isDigit() }.toIntOrNull()?.takeIf { num ->
                                         num in 0..59
                                     }?.let {
-                                        initialMinutes = it
+                                        timerState.initialMinutes = it
                                     }
                                 }
                             },
@@ -477,17 +525,17 @@ fun TimerScreen() {
                             modifier = Modifier.weight(1f)
                         )
 
-                        // 秒输入 - 修复处理逻辑
+                        // 秒输入
                         OutlinedTextField(
-                            value = initialSeconds.takeIf { it > 0 }?.toString() ?: "",
+                            value = timerState.initialSeconds.takeIf { it > 0 }?.toString() ?: "",
                             onValueChange = { input ->
                                 if (input.isEmpty()) {
-                                    initialSeconds = 0
+                                    timerState.initialSeconds = 0
                                 } else {
                                     input.filter { it.isDigit() }.toIntOrNull()?.takeIf { num ->
                                         num in 0..59
                                     }?.let {
-                                        initialSeconds = it
+                                        timerState.initialSeconds = it
                                     }
                                 }
                             },
@@ -501,10 +549,11 @@ fun TimerScreen() {
             confirmButton = {
                 Button(
                     onClick = {
-                        timerValue = initialHours * 3600 + initialMinutes * 60 + initialSeconds
-                        progress = if (timerValue > 0) 1f else 0f
-                        isRunning = false
-                        showDialog = false
+                        timerState.timerValue = timerState.initialHours * 3600 +
+                                timerState.initialMinutes * 60 +
+                                timerState.initialSeconds
+                        timerState.isRunning = false
+                        timerState.showDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = currentColorScheme.primary,
@@ -516,7 +565,7 @@ fun TimerScreen() {
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showDialog = false }
+                    onClick = { timerState.showDialog = false }
                 ) {
                     Text("取消")
                 }
@@ -526,14 +575,7 @@ fun TimerScreen() {
 }
 
 @Composable
-fun StopwatchScreen() {
-    var elapsedTime by remember { mutableLongStateOf(0L) }
-    var isRunning by remember { mutableStateOf(false) }
-    var startNano by remember { mutableLongStateOf(0L) }
-    var accumulatedNano by remember { mutableLongStateOf(0L) }
-    var laps by remember { mutableStateOf(listOf<Pair<Int, Long>>()) }
-    val scope = rememberCoroutineScope()
-    var updateJob by remember { mutableStateOf<Job?>(null) }
+fun StopwatchScreen(stopwatchState: StopwatchState) {
     val currentColorScheme = MaterialTheme.colorScheme
 
     fun formatTime(nanos: Long): String {
@@ -566,7 +608,7 @@ fun StopwatchScreen() {
     ) {
         // 时间显示
         Text(
-            text = formatTime(elapsedTime),
+            text = formatTime(stopwatchState.elapsedTime),
             style = MaterialTheme.typography.displayMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(vertical = 32.dp),
@@ -580,9 +622,10 @@ fun StopwatchScreen() {
         ) {
             FilledTonalButton(
                 onClick = {
-                    laps = laps + (laps.size + 1 to elapsedTime)
+                    stopwatchState.laps = stopwatchState.laps +
+                            (stopwatchState.laps.size + 1 to stopwatchState.elapsedTime)
                 },
-                enabled = isRunning,
+                enabled = stopwatchState.isRunning,
                 shape = CircleShape
             ) {
                 Text("计次")
@@ -590,18 +633,13 @@ fun StopwatchScreen() {
 
             Button(
                 onClick = {
-                    isRunning = !isRunning
-                    if (isRunning) {
-                        startNano = System.nanoTime()
-                        updateJob = scope.launch {
-                            while (isRunning) {
-                                delay(50)
-                                elapsedTime = accumulatedNano + (System.nanoTime() - startNano)
-                            }
-                        }
+                    stopwatchState.isRunning = !stopwatchState.isRunning
+                    if (stopwatchState.isRunning) {
+                        // 如果是重新开始，记录开始时间
+                        stopwatchState.startNano = System.nanoTime()
                     } else {
-                        accumulatedNano = elapsedTime
-                        updateJob?.cancel()
+                        // 如果暂停，保存已累计的时间
+                        stopwatchState.accumulatedNano = stopwatchState.elapsedTime
                     }
                 },
                 shape = CircleShape,
@@ -611,20 +649,19 @@ fun StopwatchScreen() {
                 )
             ) {
                 Icon(
-                    if (isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    if (isRunning) "暂停" else "开始"
+                    if (stopwatchState.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
+                    if (stopwatchState.isRunning) "暂停" else "开始"
                 )
             }
 
             FilledTonalButton(
                 onClick = {
-                    isRunning = false
-                    updateJob?.cancel()
-                    elapsedTime = 0
-                    accumulatedNano = 0
-                    laps = emptyList()
+                    stopwatchState.isRunning = false
+                    stopwatchState.elapsedTime = 0
+                    stopwatchState.accumulatedNano = 0
+                    stopwatchState.laps = emptyList()
                 },
-                enabled = elapsedTime > 0 || laps.isNotEmpty(),
+                enabled = stopwatchState.elapsedTime > 0 || stopwatchState.laps.isNotEmpty(),
                 shape = CircleShape
             ) {
                 Icon(Icons.Default.Replay, "重置")
@@ -632,7 +669,7 @@ fun StopwatchScreen() {
         }
 
         // 计次列表
-        if (laps.isNotEmpty()) {
+        if (stopwatchState.laps.isNotEmpty()) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -643,7 +680,7 @@ fun StopwatchScreen() {
                 LazyColumn(
                     modifier = Modifier.padding(8.dp)
                 ) {
-                    items(laps.reversed()) { (lapNumber, lapTime) ->
+                    items(stopwatchState.laps.reversed()) { (lapNumber, lapTime) ->
                         ListItem(
                             headlineContent = {
                                 Text(
@@ -662,7 +699,7 @@ fun StopwatchScreen() {
                             },
                             modifier = Modifier.padding(horizontal = 16.dp)
                         )
-                        if (lapNumber < laps.size) {
+                        if (lapNumber < stopwatchState.laps.size) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
                                 thickness = 1.dp,
