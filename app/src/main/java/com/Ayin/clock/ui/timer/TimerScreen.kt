@@ -9,6 +9,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,12 +24,18 @@ fun TimerScreen(
     viewModel: TimerViewModel = viewModel()
 ) {
     val currentColorScheme = MaterialTheme.colorScheme
-    val initialTime = remember {
-        viewModel.initialHours * 3600 +
-                viewModel.initialMinutes * 60 +
-                viewModel.initialSeconds
+
+    // 實時計算初始時間（移除remember）
+    val initialTime = viewModel.initialHours * 3600 +
+            viewModel.initialMinutes * 60 +
+            viewModel.initialSeconds
+
+    // 處理除零問題
+    val progress = if (initialTime > 0) {
+        (viewModel.timerValue.toFloat() / initialTime).coerceIn(0f, 1f)
+    } else {
+        1f
     }
-    val progress = if (initialTime > 0) viewModel.timerValue.toFloat() / initialTime else 1f
 
     Column(
         modifier = Modifier
@@ -42,12 +50,15 @@ fun TimerScreen(
         ) {
             IconButton(
                 onClick = { viewModel.showDialog = true },
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
             ) {
                 Icon(
                     Icons.Default.Settings,
                     contentDescription = "设置时间",
-                    tint = currentColorScheme.primary
+                    tint = currentColorScheme.primary,
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
@@ -59,6 +70,7 @@ fun TimerScreen(
                 color = currentColorScheme.primary,
                 strokeWidth = 12.dp,
                 trackColor = currentColorScheme.surfaceVariant,
+                strokeCap = StrokeCap.Round // 添加圓角端點
             )
 
             Text(

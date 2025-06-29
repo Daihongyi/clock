@@ -19,16 +19,25 @@ class TimerViewModel : ViewModel() {
     var showDialog by mutableStateOf(false)
 
     private var job: Job? = null
+    private var lastUpdateTime = 0L // 記錄上次更新時間
 
     fun startTimer() {
-        if (isRunning || timerValue <= 0) return
+        if (isRunning) return
 
         isRunning = true
+        lastUpdateTime = System.currentTimeMillis() // 記錄開始時間
+
         job?.cancel()
         job = viewModelScope.launch {
             while (isRunning && timerValue > 0) {
-                delay(1000)
-                timerValue--
+                delay(16) // 約60fps更新
+                val currentTime = System.currentTimeMillis()
+                val elapsed = (currentTime - lastUpdateTime).coerceAtLeast(0)
+
+                if (elapsed >= 1000) {
+                    timerValue -= (elapsed / 1000).toInt()
+                    lastUpdateTime = currentTime - (elapsed % 1000)
+                }
             }
             isRunning = false
         }
