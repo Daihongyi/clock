@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.implementation
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -40,8 +42,19 @@ android {
 }
 
 dependencies {
+
+    implementation(libs.material3)
     implementation(libs.accompanist.systemuicontroller)
 
+    // Compose 扩展库
+    implementation(libs.animation)
+    implementation(libs.material.icons.extended)
+
+    // ViewModel 支持
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.ui)
+    implementation(libs.ui.graphics)
+    implementation(libs.ui.tooling.preview)
     // Material 3动态颜色（Android 12+）
     implementation(libs.androidx.material3.v120)
     implementation(libs.androidx.material3.window.size.class1)
@@ -66,4 +79,15 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+
+    // Jetpack Compose UI
+    implementation(libs.androidx.compose.ui.ui)
+
+    // Compose Material Design 3
+    implementation(libs.material3)
+
+    // Compose Tooling
+    implementation(libs.androidx.compose.ui.ui.tooling.preview)
+    debugImplementation(libs.ui.tooling)
 }
