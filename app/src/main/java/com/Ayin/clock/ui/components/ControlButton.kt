@@ -1,11 +1,7 @@
 package com.Ayin.clock.ui.components
 
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Replay
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -37,11 +33,15 @@ fun ControlButton(
 
     Button(
         onClick = onClick,
-        shape = androidx.compose.foundation.shape.CircleShape,
+        shape = CircleShape,
         enabled = enabled,
         colors = colors,
-        modifier = Modifier.size(48.dp)
+        modifier = Modifier.size(64.dp) // 增大按鈕尺寸
     ) {
-        Icon(icon, contentDescription)
+        Icon(
+            icon,
+            contentDescription,
+            modifier = Modifier.size(32.dp) // 增大圖標尺寸
+        )
     }
 }
