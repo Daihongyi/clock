@@ -1,4 +1,4 @@
-package com.Ayin.clock.ui.stopwatch
+package com.ayin.clock.ui.stopwatch
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf

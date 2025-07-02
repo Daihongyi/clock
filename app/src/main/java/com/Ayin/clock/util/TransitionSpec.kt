@@ -1,4 +1,4 @@
-package com.Ayin.clock.util
+package com.ayin.clock.util
 
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.ExperimentalAnimationApi

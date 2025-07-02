@@ -1,4 +1,4 @@
-package com.Ayin.clock.ui.main
+package com.ayin.clock.ui.main
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -12,20 +12,20 @@ import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.Ayin.clock.ui.clock.ClockScreen
-import com.Ayin.clock.ui.stopwatch.StopwatchScreen
-import com.Ayin.clock.ui.theme.ThemeColors
-import com.Ayin.clock.ui.theme.ThemeSwitcher
-import com.Ayin.clock.ui.timer.TimerScreen
-import com.Ayin.clock.ui.timer.TimerViewModel
-import com.Ayin.clock.ui.stopwatch.StopwatchViewModel
-import com.Ayin.clock.util.slideAnimation
+import com.ayin.clock.ui.clock.ClockScreen
+import com.ayin.clock.ui.stopwatch.StopwatchScreen
+import com.ayin.clock.ui.theme.ThemeColors
+import com.ayin.clock.ui.theme.ThemeSwitcher
+import com.ayin.clock.ui.timer.TimerScreen
+import com.ayin.clock.ui.timer.TimerViewModel
+import com.ayin.clock.ui.stopwatch.StopwatchViewModel
+import com.ayin.clock.util.slideAnimation
+import kotlin.collections.get
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -40,7 +40,7 @@ fun TimeApp(
 
     // 创建MaterialTheme，使用当前选中的颜色方案
     MaterialTheme(
-        colorScheme = androidx.compose.material3.lightColorScheme(
+        colorScheme = lightColorScheme(
             primary = currentColorScheme.primary,
             onPrimary = Color.White,
             secondary = currentColorScheme.secondary,

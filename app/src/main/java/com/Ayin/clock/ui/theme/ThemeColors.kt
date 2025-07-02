@@ -1,4 +1,4 @@
-package com.Ayin.clock.ui.theme
+package com.ayin.clock.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

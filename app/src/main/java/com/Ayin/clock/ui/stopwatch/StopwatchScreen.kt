@@ -1,4 +1,4 @@
-package com.Ayin.clock.ui.stopwatch
+package com.ayin.clock.ui.stopwatch
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,8 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.Ayin.clock.ui.components.ControlButton
-import com.Ayin.clock.util.TimeFormatter
+import com.ayin.clock.ui.components.ControlButton
+import com.ayin.clock.util.TimeFormatter
 
 @Composable
 fun StopwatchScreen(
