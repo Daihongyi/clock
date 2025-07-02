@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ayin.clock.ui.components.CircularElementContainer
 import com.ayin.clock.ui.components.ControlButton
-import com.Ayin.clock.util.TimeFormatter
+import com.ayin.clock.util.TimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,6 +25,8 @@ fun TimerScreen(
     viewModel: TimerViewModel = viewModel()
 ) {
     val currentColorScheme = MaterialTheme.colorScheme
+    // 创建 TimeFormatter 实例
+    val timeFormatter = remember { TimeFormatter() }
 
     // 實時計算初始時間（移除remember）
     val initialTime = viewModel.initialHours * 3600 +
@@ -75,7 +77,8 @@ fun TimerScreen(
             )
 
             Text(
-                text = TimeFormatter.formatTimer(viewModel.timerValue),
+                // 使用实例调用 formatTimer
+                text = timeFormatter.formatTimer(viewModel.timerValue),
                 style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.Bold,
                 color = currentColorScheme.onSurface
