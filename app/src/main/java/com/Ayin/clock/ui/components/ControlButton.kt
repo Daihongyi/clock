@@ -1,4 +1,4 @@
-package com.Ayin.clock.ui.components
+package com.ayin.clock.ui.components
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape

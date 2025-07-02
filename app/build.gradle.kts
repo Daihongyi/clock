@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.Ayin.clock"
+    namespace = "com.ayin.clock"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.Ayin.clock"
+        applicationId = "com.ayin.clock"
         minSdk = 34
         targetSdk = 35
         versionCode = 1

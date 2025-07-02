@@ -1,4 +1,4 @@
-package com.Ayin.clock.ui.timer
+package com.ayin.clock.ui.timer
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -11,11 +11,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.Ayin.clock.ui.components.CircularElementContainer
-import com.Ayin.clock.ui.components.ControlButton
+import com.ayin.clock.ui.components.CircularElementContainer
+import com.ayin.clock.ui.components.ControlButton
 import com.Ayin.clock.util.TimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,7 +77,7 @@ fun TimerScreen(
             Text(
                 text = TimeFormatter.formatTimer(viewModel.timerValue),
                 style = MaterialTheme.typography.displayMedium,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                fontWeight = FontWeight.Bold,
                 color = currentColorScheme.onSurface
             )
         }

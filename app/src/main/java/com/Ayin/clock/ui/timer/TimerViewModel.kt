@@ -1,4 +1,4 @@
-package com.Ayin.clock.ui.timer
+package com.ayin.clock.ui.timer
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf

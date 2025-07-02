@@ -1,4 +1,4 @@
-package com.Ayin.clock.ui.clock
+package com.ayin.clock.ui.clock
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -8,20 +8,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.Ayin.clock.ui.components.CircularElementContainer
-import com.Ayin.clock.util.TimeFormatter
+import com.ayin.clock.ui.components.CircularElementContainer
+import com.ayin.clock.util.TimeFormatter
 import kotlinx.coroutines.delay
 
 @Composable
 fun ClockScreen() {
-    var currentTime by remember { mutableStateOf(TimeFormatter.currentTime()) }
+    var currentTime by remember { mutableStateOf<String>(TimeFormatter().currentTime()) }
     val currentColorScheme = MaterialTheme.colorScheme
 
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
-            currentTime = TimeFormatter.currentTime()
+            currentTime = TimeFormatter().currentTime()
         }
     }
 
@@ -43,7 +44,7 @@ fun ClockScreen() {
             Text(
                 text = currentTime,
                 style = MaterialTheme.typography.displayLarge,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                fontWeight = FontWeight.Bold,
                 color = currentColorScheme.onSurface
             )
         }
@@ -51,7 +52,7 @@ fun ClockScreen() {
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = TimeFormatter.currentDate(),
+            text = TimeFormatter().currentDate(),
             style = MaterialTheme.typography.titleLarge,
             color = currentColorScheme.onSurfaceVariant
         )
